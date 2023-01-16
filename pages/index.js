@@ -2,10 +2,74 @@ import Head from 'next/head'
 import Image from 'next/image'
 import { Inter } from '@next/font/google'
 import styles from '@/styles/Home.module.css'
+import { IKImage } from 'imagekitio-react';
+import ImageKit from "imagekit";
 
 const inter = Inter({ subsets: ['latin'] })
+const imageFolder = "beaches"
 
-export default function Home() {
+const getImages = () => {
+  return new Promise((resolve, reject) => {
+    
+    // API initialization
+    const imgkit = new ImageKit({
+      publicKey : process.env.IMAGEKIT_PUBLIC_KEY,
+      privateKey : process.env.IMAGEKIT_PRIVATE_KEY,
+      urlEndpoint : process.env.IMAGEKIT_ENDPOINT
+    })
+
+    // Search for Images in a "specific" Folder
+    console.log("fetching images.... ")
+    
+    imgkit.listFiles({
+      path : imageFolder,
+      limit: 9
+    }, function(error, result){
+      if(error) {
+        console.error(error)
+        reject(error)
+      } else {
+        // console.log(result)
+        resolve(result)
+      }
+    })  
+  })
+}
+
+export const getStaticProps = async (context) => {
+  
+  console.log("Getting images...")
+  const images = await getImages()
+
+  return {
+    props: {
+      images: images.map(image => ({
+        url: image.url,
+        thumbnail: image.thumbnail
+      }))
+    }
+  }
+}
+
+const ImageGalleryMasonry = ({images}) => {
+  return (
+    <div className='columns-1 md:columns-3 gap-8'>
+      {
+        images.map((image, index) => {
+          const aspectRatio = index % 2 == 0 ? ' aspect-[4/2]' : ' aspect-[3/4]'
+          return (
+              <img 
+                src={image.url}
+                className={'mb-8 w-full rounded-lg object-cover trasnition ease-in-out delay-150 hover:scale-150 duration-300' + aspectRatio}
+              />
+          )
+        })
+      }
+    </div>
+  )
+}
+
+export default function Home(images) {  
   return (
     <>
       <Head>
@@ -15,108 +79,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>pages/index.js</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
-          </div>
-        </div>
-
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
-          </div>
-        </div>
-
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
+        <ImageGalleryMasonry {...images} />
       </main>
     </>
   )
